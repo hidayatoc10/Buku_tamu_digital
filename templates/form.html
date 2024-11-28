@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+  <div class="container">
+    <form action="{% url 'form' %}" method="post" enctype="multipart/form-data" id="form">
+      {% csrf_token %}
+      <div class="mb-5 mt-4">
+        <center>
+          <img src="https://3.bp.blogspot.com/-5bbRmqDH-c0/WxNlptPAmCI/AAAAAAAAASs/jAXKvP69MOgcJ3P8bfvE97rzxjlhd4_RACLcBGAs/s320/LOGO%2BSMKN%2B17%2BJAKARTA.jpg" alt="" class="mb-3" width="190px" />
+          <h1>Welcome To School Guest Book</h1>
+          <h3>SMKN 17 JAKARTA</h3>
+        </center>
+      </div>
+      {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+      {% endif %}
+
+      <div class="mb-3">
+        <label for="namaLengkap" class="form-label">Nama Lengkap <span class="text-danger">*</span></label>
+        <input type="text" name="name" class="form-control" id="namaLengkap" required />
+      </div>
+      <div class="mb-3">
+        <label for="jenisKelamin" class="form-label">Jenis Kelamin <span class="text-danger">*</span></label>
+        <select name="jenis_kelamin" id="jenisKelamin" class="form-select" required>
+          <option value="Pria" selected>Pria</option>
+          <option value="Wanita">Wanita</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label for="kategoriDituju" class="form-label">Kategori yang Dituju <span class="text-danger">*</span></label>
+        <select name="kategori_dituju" id="kategoriDituju" class="form-select" required>
+          <option value="Kepala Sekolah" selected>Kepala Sekolah</option>
+          <option value="Guru">Guru</option>
+          <option value="TU">TU</option>
+          <option value="Siswa">Siswa</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label for="pihakDituju" class="form-label">Pihak Dituju <span class="text-danger">*</span></label>
+        <input type="text" name="pihak_dituju" class="form-control" id="pihakDituju" required />
+      </div>
+      <div class="mb-3">
+        <label for="keperluan" class="form-label">Keperluan <span class="text-danger">*</span></label>
+        <textarea name="keperluan" class="form-control" id="keperluan" rows="3" required></textarea>
+      </div>
+      <div class="mb-3">
+        <label for="no_hp" class="form-label">No HP <span class="text-danger">*</span></label>
+        <input type="number" name="no_hp" class="form-control" id="no_hp" required />
+      </div>
+
+      <div class="mb-3">
+        <label for="foto" class="form-label">Foto <span class="text-danger">*</span></label><br />
+        <video id="video" width="320" height="240" class="vidio" autoplay style="transform: scaleX(-1);"></video>
+        <canvas id="canvas" width="320" height="240" style="display: none;"></canvas>
+        <input type="hidden" name="foto" id="foto" />
+      </div>
+      <button type="button" id="snap" class="btn btn-primary">Submit</button>
+      <a class="btn btn-success" href="/admin/">Login</a>
+    </form>
+  </div>
+  <style>
+    .vidio {
+      border-radius: 10px;
+      box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+    }
+  </style>
+{% endblock %}
+
+{% block js %}
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    var video = document.getElementById('video')
+    var canvas = document.getElementById('canvas')
+    var context = canvas.getContext('2d')
+    var snap = document.getElementById('snap')
+    var fotoInput = document.getElementById('foto')
+    navigator.mediaDevices
+      .getUserMedia({ video: true })
+      .then(function (stream) {
+        video.srcObject = stream
+        video.play()
+      })
+      .catch(function (err) {
+        console.log('An error occurred: ' + err)
+      })
+    
+    snap.addEventListener('click', function () {
+      context.save()
+      context.scale(-1, 1)
+      context.drawImage(video, -320, 0, 320, 240)
+      context.restore()
+      canvas.toBlob(function (blob) {
+        var reader = new FileReader()
+        reader.onloadend = function () {
+          fotoInput.value = reader.result
+          document.getElementById('form').submit()
+        }
+        reader.readAsDataURL(blob)
+      })
+    })
+    
+    document.getElementById('snap').addEventListener('click', function (e) {
+      e.preventDefault()
+      var input = document.getElementById('no_hp').value
+      if (input.length < 10) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Oops...',
+          text: 'No HP minimal harus 10 karakter!'
+        })
+        return false
+      }
+    
+      Swal.fire({
+        title: 'Do you want to save the changes?',
+        showDenyButton: true,
+        showCancelButton: true,
+        confirmButtonText: 'Save',
+        denyButtonText: "Don't save"
+      }).then((result) => {
+        if (result.isConfirmed) {
+          Swal.fire('Saved!', '', 'success')
+          document.getElementById('form').submit()
+        } else if (result.isDenied) {
+          Swal.fire('Changes are not saved', '', 'info')
+        }
+      })
+    })
+  </script>
+{% endblock %}
